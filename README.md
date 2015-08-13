@@ -1,39 +1,49 @@
-Reverse Proxy + Cache for Minecraft
-===
+# Reverse Proxy for Minecraft Servers
 
-[Blog post here](https://blog.benjojo.co.uk/post/minecraft-reverse-proxy-plus-cache-on-demand)
+*This fork is an altered version of [mcod by Benjojo](https://github.com/benjojo/mcod).*
 
-One of the things that I like to play from time to time is Minecraft, however one of things ( at least with me this is ) is that Minecraft is best played with other people, This however means you have to go through all of the faf (If you don’t want to go with Minecraft realms that is) with setting up the server, installing Java on your server and running this fairly heavy java app on the server.
+Minecraft uses a lot of memory, even when no one is actually in-game. This means
+that it basically wastes precious memory resources when idle. But hey, welcome
+to the wonderful world of Java.
 
-The major sucker of it, is that it generally eats at least ~1GB of ram, even when its doing *nothing at all* and no one is connected to it.
+In order to solve that, mcod can be used as a reverse proxy. In the background,
+mcod manages the Minecraft server. The server will only be started when someone
+actually logs into the server. The server will be automatically shut down after
+a brief period of time when there's no one in-game anymore. The MotD will be
+updated every time someone refreshes the server list and the server is actually
+online. If the server is not online (a.k.a. idle), mcod will respond with a
+cached version.
 
-That’s kind of sucky.
+This version has some changes compared to the original code:
+- Improved packet handling.
+- Shows server status in the MotD (e.g. idle, starting).
+- Supports ping packets.
+- Refuses player logins when the server is not ready yet, instead of timing out.
+  It will show a message explaining why the connection has failed.
+- Closes dropped player connections properly, instead of waiting for a timeout
+  before closing it.
+- Improved logging.
+- It has no configurable cached banner or strict mode anymore. Instead, it will
+  detect everything automatically. Note that this is only supported for
+  Minecraft 1.7 or higher (tested on version 1.7.10). Earlier versions are
+  **not** compatible with this fork.
 
-<h2>Introducing mcod</h2>
+## Compilation
+The language used for this application, is [Go](https://golang.org/).
+```bash
+$ cd mcod
+$ go build
+```
 
-To “fix” this issue (since it is the only one I think I can fix out of this) I have written a really simple reverse proxy for Minecraft, Infact it can be used for just about and TCP port based game if you ignore some of the other options, but for now I will go into how it can be used for Minecraft.
+## Usage
+Place `mcod`, `StartServer` and `StopServer` in the Minecraft directory. Edit
+`StartServer` and `StopServer` to support your Minecraft server. Run `mcod`.
 
-How it works, is that when there is no one on the server (90%+ of the time in my case) the server is shut down and all that is left is the proxy. When a connection comes in, the server is quickly started up again, and the connection is patched though. Then when the player leaves again, after a short amount of time ( to prevent flapping from causing unneeded server restarts ) the server is shut down and back into idle mode.
-
-This is the default setup of the proxy right now.
-
-After running this for a bit, I started to find the server being started quite a bit without a need and then shutting down after the TTL was over. This turned out to be “banner requests” from clients who had my server in the list (or scanners on the internet looking for servers) and asking for how many players etc where on.
-
-To fix this issue of starting up the server unnessarily, I added “banner caching” now when people asked the server for a “banner” and the actual java server was not running, it would simply give the client the previous response it had seen from the java server. Meaning that I would not need to start the java backend, just to know that there were 0 people online.
-
-Right now the “-h” of the program looks like this:
-
+Type `./mcod -h` to get more information about the supported command line
+arguments:
 ```
 $ ./mcod -h
 Usage of ./mcod:
   -backend="localhost:25567": The IP address that the MC server listens on when it's online
-  -cachebanner=true: disable this if in the future they change the handshake proto
   -listen=":25565": The port / IP combo you want to listen on
-  -strict=false: Only allow requests that pass a set of rules to connect
 ```
-
-By default it will cache the banners, However. It’s worth noting that if you want to use this for other games, you will want to disable that and also alter the StartServer and StopServer scripts.
-
-In addition, this software currently assumes that it will be ran on its own user. Don’t run this program on the same user as other java apps. Since by default the StopServer script kills al java applications running.
-
-You can find the code / source for mcod here: [https://github.com/benjojo/mcod](https://github.com/benjojo/mcod)
