@@ -20,8 +20,6 @@ This version has some changes compared to the original code:
 - Supports ping packets.
 - Refuses player logins when the server is not ready yet, instead of timing out.
   It will show a message explaining why the connection has failed.
-- Closes dropped player connections properly, instead of waiting for a timeout
-  before closing it.
 - Improved logging.
 - It has no configurable cached banner or strict mode anymore. Instead, it will
   detect everything automatically. Note that this is only supported for
