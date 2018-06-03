@@ -344,13 +344,17 @@ func GetServerList() (string) {
 			json.Unmarshal([]byte(server_list_json), &json_data)
 
 			// Check if it's a valid server list, otherwise we assume the server is still starting
-			switch json_data.(type) {
-			case map[string]interface{}:
+			is_valid := false
+			if _, is_type := json_data.(map[string]interface{}); is_type {
+				// We got a JSON object back, check if the data has the key "version"
+				_, is_valid = json_data.(map[string]interface{})["version"]
+			}
+			if is_valid {
 				// Appears to be valid, update server description
 				log.Println("Received server list response from server")
 				GState.ServerList = json_data.(map[string]interface{})
 				return server_list_json
-			default:
+			} else {
 				// Not a valid response, server is not ready yet
 				SetServerDescription(old_motd + " (readying up)")
 			}
